@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>游戏主页</title>
+   <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css">  
+   <script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
+   <script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<style>
+    .myButton {
+        background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #44c767), color-stop(1, #5cbf2a));
+        background:-moz-linear-gradient(top, #44c767 5%, #5cbf2a 100%);
+        background:-webkit-linear-gradient(top, #44c767 5%, #5cbf2a 100%);
+        background:-o-linear-gradient(top, #44c767 5%, #5cbf2a 100%);
+        background:-ms-linear-gradient(top, #44c767 5%, #5cbf2a 100%);
+        background:linear-gradient(to bottom, #44c767 5%, #5cbf2a 100%);
+        filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#44c767', endColorstr='#5cbf2a',GradientType=0);
+        background-color:#44c767;
+        -moz-border-radius:42px;
+        -webkit-border-radius:42px;
+        border-radius:42px;
+        display:inline-block;
+        cursor:pointer;
+        color:#ffffff;
+        font-family:Trebuchet MS;
+        font-size:28px;
+        font-weight:bold;
+        padding:32px 48px;
+        text-decoration:none;
+    }
+    .myButton:hover {
+        background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #5cbf2a), color-stop(1, #44c767));
+        background:-moz-linear-gradient(top, #5cbf2a 5%, #44c767 100%);
+        background:-webkit-linear-gradient(top, #5cbf2a 5%, #44c767 100%);
+        background:-o-linear-gradient(top, #5cbf2a 5%, #44c767 100%);
+        background:-ms-linear-gradient(top, #5cbf2a 5%, #44c767 100%);
+        background:linear-gradient(to bottom, #5cbf2a 5%, #44c767 100%);
+        filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#5cbf2a', endColorstr='#44c767',GradientType=0);
+        background-color:#5cbf2a;
+    }
+    .myButton:active {
+        position:relative;
+        top:1px;
+    }
+
+   	</style>
+</head>
+<body>
+<p id="statusMessage" class="h1 text-center">开始游戏吧.</p>
+<div class="container">
+	<div class="row clearfix">
+		<div class="col-md-12 column">
+			<table class="table">
+				<thead>
+					<tr>
+						<th>
+						</th>
+						<th>
+						</th>
+						<th>
+						</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td>
+						</td>
+						<td>
+							<button id="enemyLeft" type="button" class="myButton btn btn-lg btn-circle">1</button>
+						</td>
+						<td>
+							<button id="enemyRight" type="button" class="myButton btn btn-lg btn-circle">2</button>
+						</td>
+					</tr>
+					<tr>
+						<td>
+						</td>					
+						<td>
+							<button id="userLeft" type="button" class="myButton btn btn-lg btn-circle">3</button>
+						</td>
+						<td>
+							<button id="userRight" type="button" class="myButton btn btn-lg btn-circle">4</button>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+<button id="waitUserStart" class="btn btn-large btn-block btn-success" type="button">开始游戏</button>
+<button id="stopGame" hidden="hidden" class="btn btn-large btn-block btn-success" type="button">停止游戏</button>
+</body>
+<script>
+
+/*
+ * 系统匹配敌人后, 会告诉用户敌人的id是什么, 以及是敌人先, 还是用户先
+ 	所以会更改的数据: enemyID, userTurn
+ */
+function giveMeAnEnemy(gameInfo) {
+	// 发送请求匹配对手的信息到服务器
+	// 从服务器获取信息, 来判断是否有匹配到对手
+	gameInfo.actionSuccess = "no";
+	$.ajax({
+		dataType: "json",
+		url: "play",
+		data: gameInfo,
+		success: function(data, textStatus, jqXHR){
+			for(key in data) { console.log(key, data[key]); }
+			console.log(textStatus);
+			// var newGameInfo = jQuery.parseJSON(data);
+			var newGameInfo = data; // 返回的是object
+			if(newGameInfo.actionSuccess == "yes") { // 这个action成功了
+				gameInfo.actionSuccess = newGameInfo.actionSuccess;
+				gameInfo.enemyID = newGameInfo.enemyID;
+				gameInfo.userTurn = newGameInfo.userTurn;
+			} else {
+				
+			}
+		}
+	});
+	return "yes" == gameInfo.actionSuccess;
+}
+
+function waitEnemyIn(gameInfo) {
+	if(giveMeAnEnemy(gameInfo)) { // 系统给了一个敌人
+		return true;
+	} else { // 系统没有给敌人
+		return false;
+	}
+}
+
+function waitEnemyOperation(gameInfo) {
+	//等待对手的操作
+	gameInfo.action = "pull";
+	gameInfo.actionSuccess = "no";
+	$.get("play", gameInfo, function(data){
+		// for(key in data) { console.log(key, data[key]); }
+		// var newGameInfo = jQuery.parseJSON(data);
+		var newGameInfo = data; // 返回的是object
+		if(newGameInfo.actionSuccess == "yes") { // 这个action成功了
+			gameInfo.actionSuccess = newGameInfo.actionSuccess;
+			// 提出对手的操作
+			gameInfo.enemyOperation = newGameInfo.enemyOperation;
+		} else {
+			
+		}
+	});
+	return "yes" == gameInfo.actionSuccess;
+}
+
+function waitUserOperation(gameInfo) {
+	// 等待用户的操作
+	// 用户操作不为空的时候, 说明捕获到了用户的操作
+	return "" != gameInfo.userOperation;
+}
+
+function waitUserOperationSend(gameInfo) {
+	//等待用户的操作发送出去
+	gameInfo.action = "push";
+	gameInfo.actionSuccess = "no";
+	$.get("play", gameInfo, function(data){
+		// for(key in data) { console.log(key, data[key]); }
+		// var newGameInfo = jQuery.parseJSON(data);
+		var newGameInfo = data; // 返回的是object
+		if(newGameInfo.actionSuccess == "yes") { // 这个action成功了
+			gameInfo.actionSuccess = newGameInfo.actionSuccess;
+		} else {
+			
+		}
+	});
+	return "yes" == gameInfo.actionSuccess;
+}
+
+function gameOver(gameInfo) {
+	// 结束游戏
+	// 告诉服务器客户端知道游戏结束了
+	gameInfo.action = "over";
+	gameInfo.actionSuccess = "no";
+	$.get("play", gameInfo, function(data){
+		// for(key in data) { console.log(key, data[key]); }
+		// var newGameInfo = jQuery.parseJSON(data);
+		var newGameInfo = data; // 返回的是object
+		if("yes" == newGameInfo.actionSuccess) {
+			gameInfo.actionSuccess = "yes";
+		} else {
+			
+		}
+	});
+	return "yes" == gameInfo.actionSuccess;
+}
+
+// 判断当前的形势是不是用户赢了
+function userWin(gameInfo) {
+	return "0" == gameInfo.userLeft && "0" == gameInfo.userRight;
+}
+// 判断当前的形势是不是对手赢了
+function enemyWin(gameInfo) {
+	return "0" == gameInfo.enemyLeft && "0" == gameInfo.enemyRight;
+}
+// 判断当前是不是有某个人赢了, 这样游戏就不能进行下去了
+function haveSomeOneWin(gameInfo) {
+	return userWin(gameInfo) || enemyWin(gameInfo);
+}
+
+// 根据用户的操作, 改变enemyLeft, enemyRight, userLeft, userRight
+function changeValuesFromUserOperation(gameInfo) {
+	var ope = gameInfo.userOperation;
+	if('l' == ope.charAt(0)) { // 用户选了自己的左手
+		var newUserLeft = parseInt(gameInfo.userLeft);
+		if('l' == ope.charAt(1)) { // 用户选了敌人的左手
+			var enemyLeft = parseInt(gameInfo.enemyLeft);
+			newUserLeft += enemyLeft;
+			newUserLeft %= 10;
+		} else { // 用户选了敌人的右手
+			var enemyRight = parseInt(gameInfo.enemyRight);
+			newUserLeft += enemyRight;
+			newUserLeft %= 10;
+		}
+		gameInfo.userLeft = newUserLeft.toString();
+	} else { // 用户选了自己的右手
+		var newUserRight = parseInt(gameInfo.userRight);
+		if('l' == ope.charAt(1)) { // 用户选了敌人的左手
+			var enemyLeft = parseInt(gameInfo.enemyLeft);
+			newUserRight += enemyLeft;
+			newUserRight %= 10;
+		} else { // 用户选了敌人的右手
+			var enemyRight = parseInt(gameInfo.enemyRight);
+			newUserRight += enemyRight;
+			newUserRight %= 10;
+		}
+		gameInfo.userRight = newUserRight.toString();
+	}
+}
+
+//根据对手的操作, 改变enemyLeft, enemyRight, userLeft, userRight
+function changeValuesFromEnemyOperation(gameInfo) {
+	var ope = gameInfo.enemyOperation;
+	if('l' == ope.charAt(0)) { // 对手选了自己的左手
+		var newEnemyLeft = parseInt(gameInfo.enemyLeft);
+		if('l' == ope.charAt(1)) { // 对手选了用户的左手
+			var userLeft = parseInt(gameInfo.userLeft);
+			newEnemyLeft += userLeft;
+			newEnemyLeft %= 10;
+		} else { // 对手选了用户的右手
+			var userRight = parseInt(gameInfo.userRight);
+			newEnemyLeft += userRight;
+			newEnemyLeft %= 10;
+		}
+		gameInfo.enemyLeft = newEnemyLeft.toString();
+	} else { // 对手选了自己的右手
+		var newEnemyRight = parseInt(gameInfo.enemyRight);
+		if('l' == ope.charAt(1)) { // 对手选了用户的左手
+			var userLeft = parseInt(gameInfo.userLeft);
+			newEnemyRight += userLeft;
+			newEnemyRight %= 10;
+		} else { // 对手选了用户的右手
+			var userRight = parseInt(gameInfo.userRight);
+			newEnemyRight += userRight;
+			newEnemyRight %= 10;
+		}
+		gameInfo.enemyRight = newEnemyRight.toString();
+	}
+}
+/*
+ * 	action 的可选值
+ 	
+ 	new:请求开始新游戏
+ 	pull:请求对手的操作
+ 	push:给对手自己的操作
+ 	over:游戏结束
+ */
+
+/*
+	status 的可选值
+	
+ 	waitUserStart:等待用户点开始游戏
+  	waitEnemyIn:等待对手点开始游戏
+  	waitEnemyOperation:等待对手的操作
+ 	waitUserOperation:等待用户的操作
+ 	waitUserOperationSend:等待用户的操作发送给对手
+ 	
+ 	gameOver:游戏结束
+ 	
+ */
+
+var gameInfo = {
+ 	action : "new",
+ 	actionSuccess : "no", // 标记这个action是否成功, "yes"代表成功, "no"代表失败
+	status : "waitUserStart",
+	userID : '' + new Date().getTime(), // 用户ID, 为当前时间戳, string类型
+	enemyID : "", // 从服务器端得到的对手ID
+	// 操作为 "ll", "lr", "rl", 或者"rr", 'l'代表左, 'r'代表右
+	// 左边代表用户对自己的手的选择, 右边代表用户对敌人的手的选择
+	userOperation : "", // 用户的操作
+	enemyOperation : "", // 从服务器端得到的对手操作
+	messageTaken : "", // "yes"代表给对手的信息, 对手收到了, "no"代表对手还没收到信息
+	userTurn : "", // "yes"代表到用户操作了, "no"代表此时应该是对手在操作
+	// 4个按钮值
+	enemyLeft : "1",
+	enemyRight : "1",
+	userLeft : "1",
+	userRight : "1", 
+	// 对手是否在线
+	enemyOnline : ""
+};
+
+/*
+ * 使用了全局变量 gameInfo, 所有要和服务器传输的相关信息都在里面
+ */
+function Game() {
+	// get方法全部改为同步
+	$.ajaxSettings.async = false;
+	// alert(JSON.stringify(gameInfo));
+	console.log(gameInfo);
+	// alert(gameInfo.status);
+	// 根据gameInfo, 改变4个按钮的值
+	$("#enemyLeft").text(gameInfo.enemyLeft);
+	$("#enemyRight").text(gameInfo.enemyRight);
+	$("#userLeft").text(gameInfo.userLeft);
+	$("#userRight").text(gameInfo.userRight);
+	disableZeroButton();
+	// console.log(JSON.stringify(gameInfo));
+	// 显示用户提示信息
+	showStatusMessage("statusMessage", gameInfo);
+	switch(gameInfo.status) {
+	case "waitUserStart":
+		disabledAllButton(); // 游戏没开始, 用户不可以操作
+		break;
+	case "waitEnemyIn":
+		gameInfo.action = "new";
+		gameInfo.actionSuccess = "no";
+		disabledAllButton(); // 等待对手, 用户不可以操作
+		if(waitEnemyIn(gameInfo)) { // 匹配了对手
+			if("yes" == gameInfo.userTurn) { // 系统让用户先操作
+				alert("匹配到对手了, 你是先手");
+				gameInfo.status = "waitUserOperation";
+			} else if("no" == gameInfo.userTurn){ // 系统让对手先操作
+				alert("匹配到对手了, 你是后手");
+				gameInfo.status = "waitEnemyOperation";
+			} else {
+				alert("userTurn wrong, it=" + gameInfo.userTurn);
+			}
+			enableAllButton(); // 等对手成功了, 可以释放按键了
+			gameInfo.userOperation = ""; // 清空用户的操作
+			gameInfo.enemyOperation = ""; // 清空敌人的操作			
+		} else {
+			
+		}
+		
+		break;
+	case "waitEnemyOperation":
+		disabledAllButton(); // 不给用户点击!!注意这个函数在后方, 架构没设计好	
+		gameInfo.action = "pull";
+		gameInfo.actionSuccess = "no";		
+		if(waitEnemyOperation(gameInfo)) {
+			// 得到敌人操作的数据后
+			// 根据敌人的操作改变值
+			changeValuesFromEnemyOperation(gameInfo);
+			gameInfo.userOperation = ""; // 清空用户的操作
+			gameInfo.enemyOperation = ""; // 清空敌人的操作
+			enableAllButton(); // 使得所有按钮都可以被选!!注意这个函数在后方, 架构没设计好			
+			// 接下来等待用户的操作
+			gameInfo.status = "waitUserOperation";
+		} else {
+			if("no" == gameInfo.enemyOnline) { // 对方不在了
+				alert("enemy is died.");
+				gameInfo.status = "waitUserStart";
+			} else {
+				
+			}
+			gameInfo.enemyOnline = "";
+		}
+		
+		// 检查是不是有人赢了
+		if(haveSomeOneWin(gameInfo)) {
+			gameInfo.status = "gameOver";
+		} else {
+			
+		}
+		break;
+	case "waitUserOperation":
+		if(waitUserOperation(gameInfo)) {
+			 // 根据用户操作改变值
+			changeValuesFromUserOperation(gameInfo);
+			// 等待用户操作后, 下一步就是将用户的操作发送出去了
+			gameInfo.status = "waitUserOperationSend";
+		} else {
+			if("no" == gameInfo.enemyOnline) { // 对方不在了
+				alert("enemy is died.");
+				gameInfo.status = "waitUserStart";
+			} else {
+				
+			}
+			gameInfo.enemyOnline = "";
+		}
+		break;
+	case "waitUserOperationSend":
+		gameInfo.action = "push";
+		gameInfo.actionSuccess = "no";
+		gameInfo.messageTaken = "no"; // 用来标记对手是否收到了消息
+		if(waitUserOperationSend(gameInfo)) {
+			// 发送操作成功后
+			gameInfo.userOperation = ""; // 清空用户的操作
+			gameInfo.enemyOperation = ""; // 清空敌人的操作
+			// 用户发送自己的操作成功后, 接下来是等敌人的操作
+			gameInfo.status = "waitEnemyOperation";
+		} else {
+			
+		}
+		
+		// 检查是不是有人赢了
+		if(haveSomeOneWin(gameInfo)) {
+			gameInfo.status = "gameOver";
+		} else {
+			
+		}
+		break;
+	case "gameOver":
+		gameInfo.action = "over";
+		gameInfo.actionSuccess = "no";
+		if(userWin(gameInfo)) {
+			alert("你赢了");
+		} else if(enemyWin(gameInfo)){
+			alert("你输了");
+		} else {
+			
+		}
+		if(gameOver(gameInfo)) {
+			// 结束游戏成功, 改变状态
+			gameInfo.status = "waitUserStart";
+			
+		 	$("#waitUserStart").show(); // 显示开始游戏的按钮
+		 	$("#stopGame").hide(); // 隐藏停止游戏的按钮
+		} else {
+			
+		}
+		break;
+	default:
+		break;
+	}
+	// 根据gameInfo, 改变4个按钮的值
+	$("#enemyLeft").text(gameInfo.enemyLeft);
+	$("#enemyRight").text(gameInfo.enemyRight);
+	$("#userLeft").text(gameInfo.userLeft);
+	$("#userRight").text(gameInfo.userRight);	
+	// get方法改回异步
+	$.ajaxSettings.async = true;
+}
+
+// 页面加载完毕后, 开始一系列动作
+$( document ).ready(function() {
+ 	$("#waitUserStart").show(); // 显示开始游戏的按钮
+ 	$("#stopGame").hide(); // 隐藏停止游戏的按钮
+	setInterval(Game, 200);
+});
+
+/*
+ * 以下是交互相关的编写
+ */
+
+// messageID:文本框的ID
+// gameInfo:游戏相关的信息, 这里用gameInfo.status即可
+function showStatusMessage(messageID, gameInfo) {
+	switch(gameInfo.status) {
+	case "waitUserStart": // 等待用户点开始游戏
+		$("#" + messageID).text("开始游戏吧.");
+		break;
+	case "waitEnemyIn": // 等待对手点开始游戏
+		$("#" + messageID).text("等待匹配中...");
+		break;
+	case "waitEnemyOperation": // 等待对手的操作
+		$("#" + messageID).text("等待对手操作中...");
+		break;
+	case "waitUserOperation": // 等待用户的操作
+		$("#" + messageID).text("到你了");
+		break;
+	case "waitUserOperationSend": // 等待用户的操作发送给对手
+		$("#" + messageID).text("发送操作给对手中...");
+		break;
+	case "gameOver": // 游戏结束
+		$("#" + messageID).text("游戏结束");
+		break;
+	default:
+		break;
+	}
+}
+ 
+// 等待对手的时候, 用户不可操作
+function disabledAllButton() {
+	$("#enemyLeft").prop('disabled', true);
+	$("#enemyRight").prop('disabled', true);
+	$("#userLeft").prop('disabled', true);
+	$("#userRight").prop('disabled', true);
+}
+
+// 使值为0的按钮无法被按
+function disableZeroButton() {
+	if("0" == $("#enemyLeft").text()) {
+		$("#enemyLeft").prop('disabled', true);
+	} else {
+		
+	}
+	if("0" == $("#enemyRight").text()) {
+		$("#enemyRight").prop('disabled', true);
+	} else {
+		
+	}
+	if("0" == $("#userLeft").text()) {
+		$("#userLeft").prop('disabled', true);
+	} else {
+		
+	}
+	if("0" == $("#userRight").text()) {
+		$("#userRight").prop('disabled', true);
+	} else {
+		
+	}
+}
+
+// 等待用户操作, 用户一个都没有进行选择时
+function enableAllButton() {
+	$("#enemyLeft").prop('disabled', false);
+	$("#enemyRight").prop('disabled', false);
+	$("#userLeft").prop('disabled', false);
+	$("#userRight").prop('disabled', false);
+}
+
+// 用户的选择可以进行发送了
+function canSendUserOperation(userOperation) {
+	return "" != userOperation.enemy && "" != userOperation.user;
+}
+// 清除用户的所有选择
+function clearUserOperation(userOperation) {
+	userOperation.enemy = "";
+	userOperation.user = "";
+}
+
+// 使用这个函数的时候, 必须确保userOperation中的数据都不为""
+function setUserOperationToGameInfo(userOperation, gameInfo) {
+	if("left" == userOperation.user) { // 用户选了自己的左手
+		if("left" == userOperation.enemy) { // 用户选择了敌人的左手
+			gameInfo.userOperation = "ll";
+		} else { // 用户选择了敌人的右手
+			gameInfo.userOperation = "lr";
+		}
+	} else { // 用户选了自己的右手
+		if("left" == userOperation.enemy) { // 用户选择了敌人的左手
+			gameInfo.userOperation = "rl";
+		} else { // 用户选择了敌人的右手
+			gameInfo.userOperation = "rr";
+		}
+	}
+}
+
+//用户的决策
+ var userOperation = {
+ 	enemy : "", // 空字符串代表没有选择
+ 	user : ""
+ }
+
+ // 敌人的左手被click
+ $("#enemyLeft").click(function(){
+ 	$(this).prop('disabled', true);
+ 	$("#enemyRight").prop('disabled', false);
+ 	userOperation.enemy = "left";
+ 	if(canSendUserOperation(userOperation)) {
+ 		// alert("cao send");
+ 		disabledAllButton(); // 屏蔽按钮
+ 		setUserOperationToGameInfo(userOperation, gameInfo); // 将数据存入gameInfo
+ 		clearUserOperation(userOperation); // 清除数据
+ 	} else {
+ 		
+ 	}
+ });
+ // 敌人的右手被click
+ $("#enemyRight").click(function(){
+ 	$(this).prop('disabled', true);
+ 	$("#enemyLeft").prop('disabled', false);
+ 	userOperation.enemy = "right";
+ 	if(canSendUserOperation(userOperation)) {
+ 		// alert("cao send");
+ 		disabledAllButton(); // 屏蔽按钮
+ 		setUserOperationToGameInfo(userOperation, gameInfo); // 将数据存入gameInfo
+ 		clearUserOperation(userOperation); // 清除数据
+ 	} else {
+ 		
+ 	}
+ });
+ // 用户的左手被click
+ $("#userLeft").click(function(){
+ 	$(this).prop('disabled', true);
+ 	$("#userRight").prop('disabled', false);
+ 	userOperation.user = "left";
+ 	if(canSendUserOperation(userOperation)) {
+ 		// alert("cao send");
+ 		disabledAllButton(); // 屏蔽按钮
+ 		setUserOperationToGameInfo(userOperation, gameInfo); // 将数据存入gameInfo
+ 		clearUserOperation(userOperation); // 清除数据
+ 	} else {
+ 		
+ 	}
+ });
+ // 用户的右手被click
+ $("#userRight").click(function(){
+ 	$(this).prop('disabled', true);
+ 	$("#userLeft").prop('disabled', false);
+ 	userOperation.user = "right";
+ 	if(canSendUserOperation(userOperation)) {
+ 		// alert("cao send");
+ 		disabledAllButton(); // 屏蔽按钮
+ 		setUserOperationToGameInfo(userOperation, gameInfo); // 将数据存入gameInfo
+ 		clearUserOperation(userOperation); // 清除数据
+ 	} else {
+ 		
+ 	}
+ });
+
+ $("#waitUserStart").click(function(){
+ 	// alert("user press start.");
+ 	
+ 	$("#waitUserStart").hide(); // 隐藏开始游戏的按钮
+ 	$("#stopGame").show(); // 显示停止游戏的按钮
+ 	
+ 	gameInfo.userID = '' + new Date().getTime(); // 新的用户ID
+ 	gameInfo.status = "waitEnemyIn"; // 进入等待匹配的状态
+ 	
+ 	// 初始化4个值
+	gameInfo.enemyLeft = "1";
+	gameInfo.enemyRight = "1";
+	gameInfo.userLeft = "1";
+	gameInfo.userRight = "1";
+	// 根据gameInfo, 改变4个按钮的值
+	$("#enemyLeft").text(gameInfo.enemyLeft);
+	$("#enemyRight").text(gameInfo.enemyRight);
+	$("#userLeft").text(gameInfo.userLeft);
+	$("#userRight").text(gameInfo.userRight);
+	
+	
+ });
+ 
+ $("#stopGame").click(function(){
+		// alert("user press stop.");
+	 	$("#waitUserStart").show(); // 显示开始游戏的按钮
+	 	$("#stopGame").hide(); // 隐藏停止游戏的按钮
+	 	
+		gameInfo.status = "gameOver";
+
+	}); 
+</script>
+</html>
