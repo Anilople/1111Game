@@ -622,14 +622,29 @@ function setUserOperationToGameInfo(userOperation, gameInfo) {
  	$("#waitUserStart").hide(); // 隐藏开始游戏的按钮
  	$("#stopGame").show(); // 显示停止游戏的按钮
  	
+ 	// 初始化4个值
+	gameInfo = {
+	 	action : "new",
+	 	actionSuccess : "no", // 标记这个action是否成功, "yes"代表成功, "no"代表失败
+		status : "waitUserStart",
+		userID : '' + new Date().getTime(), // 用户ID, 为当前时间戳, string类型
+		enemyID : "", // 从服务器端得到的对手ID
+		// 操作为 "ll", "lr", "rl", 或者"rr", 'l'代表左, 'r'代表右
+		// 左边代表用户对自己的手的选择, 右边代表用户对敌人的手的选择
+		userOperation : "", // 用户的操作
+		enemyOperation : "", // 从服务器端得到的对手操作
+		messageTaken : "", // "yes"代表给对手的信息, 对手收到了, "no"代表对手还没收到信息
+		userTurn : "", // "yes"代表到用户操作了, "no"代表此时应该是对手在操作
+		// 4个按钮值
+		enemyLeft : "1",
+		enemyRight : "1",
+		userLeft : "1",
+		userRight : "1", 
+		// 对手是否在线
+		enemyOnline : ""
+	};
  	gameInfo.userID = '' + new Date().getTime(); // 新的用户ID
  	gameInfo.status = "waitEnemyIn"; // 进入等待匹配的状态
- 	
- 	// 初始化4个值
-	gameInfo.enemyLeft = "1";
-	gameInfo.enemyRight = "1";
-	gameInfo.userLeft = "1";
-	gameInfo.userRight = "1";
 	// 根据gameInfo, 改变4个按钮的值
 	$("#enemyLeft").text(gameInfo.enemyLeft);
 	$("#enemyRight").text(gameInfo.enemyRight);
