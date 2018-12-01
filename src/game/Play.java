@@ -26,7 +26,7 @@ public class Play extends HttpServlet{
 	static int getTimes = 0;
 	
 	@Override
-	protected void doGet(HttpServletRequest req, HttpServletResponse resp) 
+	protected void doPost(HttpServletRequest req, HttpServletResponse resp) 
 			throws ServletException, IOException {
 		// super.doGet(req, resp); // 不要用父类的方法, 否则有405错误
 		System.out.println(getTimes + " times");

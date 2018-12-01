@@ -102,6 +102,7 @@ function giveMeAnEnemy(gameInfo) {
 	// 从服务器获取信息, 来判断是否有匹配到对手
 	gameInfo.actionSuccess = "no";
 	$.ajax({
+		type: 'POST',
 		dataType: "json",
 		url: "play",
 		data: gameInfo,
@@ -134,7 +135,7 @@ function waitEnemyOperation(gameInfo) {
 	//等待对手的操作
 	gameInfo.action = "pull";
 	gameInfo.actionSuccess = "no";
-	$.get("play", gameInfo, function(data){
+	$.post("play", gameInfo, function(data){
 		// for(key in data) { console.log(key, data[key]); }
 		// var newGameInfo = jQuery.parseJSON(data);
 		var newGameInfo = data; // 返回的是object
@@ -159,7 +160,7 @@ function waitUserOperationSend(gameInfo) {
 	//等待用户的操作发送出去
 	gameInfo.action = "push";
 	gameInfo.actionSuccess = "no";
-	$.get("play", gameInfo, function(data){
+	$.post("play", gameInfo, function(data){
 		// for(key in data) { console.log(key, data[key]); }
 		// var newGameInfo = jQuery.parseJSON(data);
 		var newGameInfo = data; // 返回的是object
@@ -177,7 +178,7 @@ function gameOver(gameInfo) {
 	// 告诉服务器客户端知道游戏结束了
 	gameInfo.action = "over";
 	gameInfo.actionSuccess = "no";
-	$.get("play", gameInfo, function(data){
+	$.post("play", gameInfo, function(data){
 		// for(key in data) { console.log(key, data[key]); }
 		// var newGameInfo = jQuery.parseJSON(data);
 		var newGameInfo = data; // 返回的是object
