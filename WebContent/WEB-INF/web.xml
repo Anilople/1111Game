@@ -17,4 +17,13 @@
   	<servlet-name>Play</servlet-name>
   	<url-pattern>/play</url-pattern>
   </servlet-mapping>
+
+  <servlet>
+  	<servlet-name>TestDB</servlet-name>
+  	<servlet-class>game.TestDB</servlet-class>
+  </servlet>
+  <servlet-mapping>
+  	<servlet-name>TestDB</servlet-name>
+  	<url-pattern>/testDB</url-pattern>
+  </servlet-mapping>  
 </web-app>

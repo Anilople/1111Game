@@ -1,7 +1,7 @@
 package game;
 
 import java.io.IOException;
-
+import java.sql.SQLException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -22,7 +22,8 @@ public class Play extends HttpServlet{
 	static Set<String> IDInQueue = new HashSet<String>();
 	// 正在玩的玩家
 	static Map<String, GameInfo> inPlaying = new HashMap<String, GameInfo>();
-	
+	// 用来判断一个GameInfo是否应该存入数据库
+	static Map<String, GameInfo> lastSave = new HashMap<String, GameInfo>();
 	static int getTimes = 0;
 	
 	@Override
@@ -61,6 +62,26 @@ public class Play extends HttpServlet{
 		
 		System.out.println("客户端传来的数据:");
 		System.out.println(gameInfo.toJSON());
+		
+		// 判断得到的GameInfo是不是要存入数据库
+		String userID = gameInfo.get("userID");
+		// last可能为null, 因为lastSave可能之前没有放入userID对应的GameInfo
+		GameInfo last = lastSave.get(userID);
+		if(gameInfo.equals(last)) {
+			// 这次传来的和上次相等, 不用存入数据库
+		} else {
+			// 和上次不相等, 应该存入数据库
+			// 先将新的gameInfo放入lastSave(也可以说是覆盖老的)
+			lastSave.put(userID, gameInfo);
+			// 再存入数据库
+			try {
+				gameInfo.saveToDatabase();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				System.out.println("存入数据库失败");
+			}
+		}
 		
 		// 执行动作action
 		switch(String.valueOf(gameInfo.get("action"))) {
